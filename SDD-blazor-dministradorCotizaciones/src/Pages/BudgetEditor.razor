@@ -1,0 +1,245 @@
+@page "/budget-editor"
+@page "/budget-editor/{BudgetId:guid}"
+@namespace BudgetApp.Pages
+@using BudgetApp.Components
+@inject IBudgetService BudgetService
+@inject AutoSaveService AutoSaveService
+@inject NavigationManager Navigation
+@inject ICurrencyService CurrencyService
+
+<PageTitle>Editor de Presupuesto</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1>Editor de Presupuesto</h1>
+            @if (CurrentBudget != null)
+            {
+                <small class="text-muted">
+                    Moneda: <span class="badge bg-secondary">@(CurrentBudget.Currency == Currency.Pesos ? "ARS (Pesos)" : "USD (Dólares)")</span>
+                </small>
+            }
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            @if (CurrentBudget != null)
+            {
+                <div class="me-2">
+                    <CurrencySelector SelectedCurrency="@CurrentBudget.Currency" SelectedCurrencyChanged="HandleCurrencyChanged" />
+                </div>
+            }
+            <button class="btn btn-secondary" @onclick="ToggleView">
+                @(ShowPreview ? "Modo Edición" : "Vista Previa")
+            </button>
+            @if (CurrentBudget != null)
+            {
+                <SaveBudgetButton @key="CurrentBudget.Id" Budget="@CurrentBudget" OnSaved="HandleBudgetSaved" />
+            }
+        </div>
+    </div>
+
+    @if (CurrentBudget == null)
+    {
+        <div class="alert alert-info">
+            <p>Cargando presupuesto...</p>
+        </div>
+    }
+    else if (ShowPreview)
+    {
+        <BudgetPreview Budget="@CurrentBudget" />
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5>Configuración de Moneda</h5>
+                    </div>
+                    <div class="card-body">
+                        <ExchangeRateConfig />
+                    </div>
+                </div>
+                <ClientEditForm Client="@CurrentBudget.Client" OnClientChanged="HandleClientChanged" />
+
+                <BudgetItemEditForm 
+                    Item="@EditingItem" 
+                    OnItemAdded="HandleItemAdded" 
+                    OnItemUpdated="HandleItemUpdated" 
+                    OnItemDeleted="HandleItemDeleted"
+                    OnCancel="HandleCancelEdit" />
+
+                <BudgetItemList Items="@CurrentBudget.Items" OnEditItem="HandleEditItem" />
+            </div>
+            <div class="col-lg-4">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header">
+                        <h5>Resumen</h5>
+                    </div>
+                    <div class="card-body">
+                        <BudgetSummary Total="@CurrentBudget.Total" Currency="@CurrentBudget.Currency" />
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                Items: @CurrentBudget.Items.Count<br />
+                                Creado: @CurrentBudget.CreatedDate.ToString("dd/MM/yyyy HH:mm")<br />
+                                Modificado: @CurrentBudget.LastModifiedDate.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public Guid? BudgetId { get; set; }
+
+    private Budget? CurrentBudget { get; set; }
+    private bool ShowPreview { get; set; } = false;
+    private BudgetItem? EditingItem { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (BudgetId.HasValue)
+        {
+            CurrentBudget = await BudgetService.GetBudgetAsync(BudgetId.Value);
+            if (CurrentBudget == null)
+            {
+                // Budget not found, redirect to list
+                Navigation.NavigateTo("/budgets");
+            }
+        }
+        else
+        {
+            // Create a new budget with empty client (will be filled by user)
+            var client = new Client
+            {
+                Name = "Sin nombre", // Placeholder until user fills it
+                Company = null,
+                Email = "sin-email@ejemplo.com" // Placeholder until user fills it
+            };
+
+            CurrentBudget = await BudgetService.CreateBudgetAsync(client);
+        }
+    }
+
+    private void ToggleView()
+    {
+        ShowPreview = !ShowPreview;
+    }
+
+    private async Task HandleClientChanged(Client updatedClient)
+    {
+        if (CurrentBudget == null)
+            return;
+
+        // Update client in memory only - don't save automatically
+        CurrentBudget = CurrentBudget with { Client = updatedClient };
+        StateHasChanged();
+    }
+
+    private async Task HandleItemAdded(BudgetItem item)
+    {
+        if (CurrentBudget != null)
+        {
+            var items = CurrentBudget.Items.ToList();
+            items.Add(item);
+            CurrentBudget = CurrentBudget with { Items = items };
+            // Don't save automatically - user must click "Guardar Presupuesto"
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleItemUpdated(BudgetItem item)
+    {
+        if (CurrentBudget != null)
+        {
+            var items = CurrentBudget.Items.ToList();
+            var index = items.FindIndex(i => i.Id == item.Id);
+            if (index >= 0)
+            {
+                items[index] = item;
+                CurrentBudget = CurrentBudget with { Items = items };
+                EditingItem = null;
+                // Don't save automatically - user must click "Guardar Presupuesto"
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task HandleItemDeleted(Guid itemId)
+    {
+        if (CurrentBudget != null)
+        {
+            var items = CurrentBudget.Items.Where(i => i.Id != itemId).ToList();
+            CurrentBudget = CurrentBudget with { Items = items };
+            EditingItem = null;
+            // Don't save automatically - user must click "Guardar Presupuesto"
+            StateHasChanged();
+        }
+    }
+
+    private void HandleEditItem(BudgetItem item)
+    {
+        EditingItem = item;
+        StateHasChanged();
+    }
+
+    private void HandleCancelEdit()
+    {
+        EditingItem = null;
+        StateHasChanged();
+    }
+
+    private async Task SaveBudgetAsync()
+    {
+        if (CurrentBudget == null)
+            return;
+
+        try
+        {
+            // Save budget with all current data (Client, Currency, Items, etc.)
+            CurrentBudget = await BudgetService.SaveBudgetAsync(CurrentBudget);
+            // Don't schedule auto-save after manual save - user has already saved
+        }
+        catch (Exception ex)
+        {
+            // Log error - in production you might want to show a toast notification
+            Console.WriteLine($"Error saving budget: {ex.Message}");
+        }
+    }
+
+    private void HandleBudgetSaved(Budget savedBudget)
+    {
+        CurrentBudget = savedBudget;
+        StateHasChanged();
+    }
+
+    private async Task HandleCurrencyChanged(Currency newCurrency)
+    {
+        if (CurrentBudget == null)
+            return;
+
+        // Don't do anything if currency hasn't changed
+        if (CurrentBudget.Currency == newCurrency)
+            return;
+
+        // Validate exchange rate is configured before allowing currency change
+        if (!CurrencyService.IsExchangeRateConfigured() && newCurrency != Currency.Pesos)
+        {
+            // Show error message
+            // Note: In a production app, you might want to use a toast notification service
+            // For now, we prevent the change and could show an alert
+            await Task.Delay(0); // Placeholder for future error display
+            StateHasChanged();
+            return;
+        }
+
+        // Update currency in memory only - don't save automatically
+        CurrentBudget = CurrentBudget with { Currency = newCurrency };
+        StateHasChanged();
+    }
+}
+
+

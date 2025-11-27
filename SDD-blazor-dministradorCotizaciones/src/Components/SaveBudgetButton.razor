@@ -1,0 +1,89 @@
+@namespace BudgetApp.Components
+@inject IBudgetService BudgetService
+
+<button class="btn btn-primary" @onclick="HandleSave" disabled="@IsSaving">
+    @if (IsSaving)
+    {
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        <text>Guardando...</text>
+    }
+    else
+    {
+        <text>Guardar Presupuesto</text>
+    }
+</button>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert @(IsSuccess ? "alert-success" : "alert-danger") mt-2" role="alert">
+        @Message
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public Budget Budget { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<Budget> OnSaved { get; set; }
+
+    private bool IsSaving { get; set; }
+    private string Message { get; set; } = string.Empty;
+    private bool IsSuccess { get; set; }
+
+    private async Task HandleSave()
+    {
+        if (Budget == null) return;
+
+        IsSaving = true;
+        Message = string.Empty;
+        IsSuccess = false;
+        StateHasChanged();
+
+        try
+        {
+            // Ensure we're saving the most current budget data
+            // Validate that client has a name before saving
+            var budgetToSave = Budget;
+            if (string.IsNullOrWhiteSpace(budgetToSave.Client.Name))
+            {
+                Message = "Por favor, complete el nombre del cliente antes de guardar.";
+                IsSuccess = false;
+                IsSaving = false;
+                StateHasChanged();
+                return;
+            }
+
+            var savedBudget = await BudgetService.SaveBudgetAsync(budgetToSave);
+            Message = "Presupuesto guardado exitosamente.";
+            IsSuccess = true;
+            await OnSaved.InvokeAsync(savedBudget);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Message = ex.Message;
+            IsSuccess = false;
+        }
+        catch (Exception ex)
+        {
+            Message = $"Error al guardar: {ex.Message}";
+            IsSuccess = false;
+        }
+        finally
+        {
+            IsSaving = false;
+            StateHasChanged();
+
+            // Clear message after 3 seconds
+            if (IsSuccess)
+            {
+                _ = Task.Delay(3000).ContinueWith(_ =>
+                {
+                    Message = string.Empty;
+                    InvokeAsync(StateHasChanged);
+                });
+            }
+        }
+    }
+}
+

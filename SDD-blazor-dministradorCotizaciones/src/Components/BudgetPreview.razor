@@ -1,0 +1,41 @@
+@namespace BudgetApp.Components
+@inject ICalculationService CalculationService
+
+<div class="preview-container">
+    <div class="preview-header">
+        <h2 class="preview-title">Vista Previa del Presupuesto</h2>
+        @if (Budget != null)
+        {
+            <div class="preview-currency">
+                <span class="badge bg-info">Moneda: @(Budget.Currency == Currency.Pesos ? "ARS (Pesos)" : "USD (Dólares)")</span>
+            </div>
+        }
+    </div>
+
+    @if (Budget != null)
+    {
+        @if (ShowClientInfo)
+        {
+            <ClientInfo Client="@Budget.Client" />
+        }
+
+        <BudgetItemTable Items="@Budget.Items" Currency="@Budget.Currency" />
+
+        <BudgetSummary Total="@Budget.Total" Currency="@Budget.Currency" />
+    }
+    else
+    {
+        <div class="empty-state">
+            <p>No hay presupuesto para mostrar</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Budget? Budget { get; set; }
+
+    [Parameter]
+    public bool ShowClientInfo { get; set; } = true;
+}
+

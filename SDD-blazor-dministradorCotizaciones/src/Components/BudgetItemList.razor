@@ -1,0 +1,64 @@
+@namespace BudgetApp.Components
+@inject ICalculationService CalculationService
+
+@if (Items == null || !Items.Any())
+{
+    <div class="alert alert-info">
+        <p>No hay items en el presupuesto. Agrega items usando el formulario de arriba.</p>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <h5>Items del Presupuesto</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th class="text-center">Cantidad</th>
+                            <th class="text-right">Precio Unitario</th>
+                            <th class="text-right">Subtotal</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Items)
+                        {
+                            <tr>
+                                <td>@item.Description</td>
+                                <td class="text-center">@item.Quantity.ToString("N2")</td>
+                                <td class="text-right">@CalculationService.FormatCurrency(item.UnitPrice)</td>
+                                <td class="text-right">@CalculationService.FormatCurrency(item.Subtotal)</td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-primary" @onclick="() => OnEditItem.InvokeAsync(item)">
+                                        Editar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-primary">
+                            <th colspan="3" class="text-right">Total:</th>
+                            <th class="text-right">@CalculationService.FormatCurrency(Items.Sum(i => i.Subtotal))</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<BudgetItem> Items { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<BudgetItem> OnEditItem { get; set; }
+}
+

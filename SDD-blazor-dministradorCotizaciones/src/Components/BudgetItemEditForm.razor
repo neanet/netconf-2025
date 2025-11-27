@@ -1,0 +1,131 @@
+@namespace BudgetApp.Components
+@using System.ComponentModel.DataAnnotations
+
+<EditForm Model="@ItemModel" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>@(IsEditing ? "Editar Item" : "Agregar Item")</h5>
+            @if (IsEditing)
+            {
+                <button type="button" class="btn btn-sm btn-secondary" @onclick="HandleCancel">Cancelar</button>
+            }
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Descripción *</label>
+                    <InputText @bind-Value="ItemModel.Description" class="form-control" />
+                    <ValidationMessage For="@(() => ItemModel.Description)" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Cantidad *</label>
+                    <InputNumber @bind-Value="ItemModel.Quantity" class="form-control" step="0.01" min="0.01" />
+                    <ValidationMessage For="@(() => ItemModel.Quantity)" />
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Precio Unitario *</label>
+                    <InputNumber @bind-Value="ItemModel.UnitPrice" class="form-control" step="0.01" min="0" />
+                    <ValidationMessage For="@(() => ItemModel.UnitPrice)" />
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">@(IsEditing ? "Actualizar" : "Agregar")</button>
+                @if (IsEditing)
+                {
+                    <button type="button" class="btn btn-danger" @onclick="HandleDelete">Eliminar</button>
+                }
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public BudgetItem? Item { get; set; }
+
+    [Parameter]
+    public EventCallback<BudgetItem> OnItemAdded { get; set; }
+
+    [Parameter]
+    public EventCallback<BudgetItem> OnItemUpdated { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> OnItemDeleted { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private bool IsEditing => Item != null;
+    private BudgetItemEditModel ItemModel { get; set; } = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Item != null)
+        {
+            ItemModel = new BudgetItemEditModel
+            {
+                Id = Item.Id,
+                Description = Item.Description,
+                Quantity = Item.Quantity,
+                UnitPrice = Item.UnitPrice
+            };
+        }
+        else
+        {
+            ItemModel = new BudgetItemEditModel();
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        var budgetItem = new BudgetItem
+        {
+            Id = IsEditing ? Item!.Id : Guid.NewGuid(),
+            Description = ItemModel.Description,
+            Quantity = ItemModel.Quantity,
+            UnitPrice = ItemModel.UnitPrice
+        };
+
+        if (IsEditing)
+        {
+            await OnItemUpdated.InvokeAsync(budgetItem);
+        }
+        else
+        {
+            await OnItemAdded.InvokeAsync(budgetItem);
+            ItemModel = new BudgetItemEditModel(); // Reset form
+        }
+    }
+
+    private async Task HandleDelete()
+    {
+        if (Item != null)
+        {
+            await OnItemDeleted.InvokeAsync(Item.Id);
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+
+    private class BudgetItemEditModel
+    {
+        public Guid Id { get; set; }
+
+        [Required(ErrorMessage = "La descripción del item es requerida")]
+        [StringLength(500, MinimumLength = 1, ErrorMessage = "La descripción debe tener entre 1 y 500 caracteres")]
+        public string Description { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La cantidad es requerida")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "La cantidad debe ser mayor que cero")]
+        public decimal Quantity { get; set; }
+
+        [Required(ErrorMessage = "El precio unitario es requerido")]
+        [Range(0, double.MaxValue, ErrorMessage = "El precio unitario debe ser mayor o igual a cero")]
+        public decimal UnitPrice { get; set; }
+    }
+}
+

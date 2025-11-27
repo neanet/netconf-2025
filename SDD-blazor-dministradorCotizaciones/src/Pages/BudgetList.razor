@@ -1,0 +1,106 @@
+@page "/budgets"
+@namespace BudgetApp.Pages
+@using BudgetApp.Components
+@using BudgetApp.Models
+@inject IBudgetService BudgetService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Lista de Presupuestos</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Presupuestos Guardados</h1>
+        <a href="/budget-editor" class="btn btn-primary">Nuevo Presupuesto</a>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="alert alert-info">
+            <p>Cargando presupuestos...</p>
+        </div>
+    }
+    else if (ErrorMessage != null)
+    {
+        <div class="alert alert-danger">
+            <p>@ErrorMessage</p>
+        </div>
+    }
+    else
+    {
+        <BudgetApp.Components.BudgetList 
+            Budgets="@Budgets" 
+            OnBudgetSelected="HandleBudgetSelected" 
+            OnBudgetDeleted="HandleBudgetDeleted" />
+    }
+</div>
+
+@code {
+    private List<BudgetApp.Models.BudgetSummary> Budgets { get; set; } = new();
+    private bool IsLoading { get; set; } = true;
+    private string? ErrorMessage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBudgetsAsync();
+    }
+
+    private async Task LoadBudgetsAsync()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            Budgets = await BudgetService.GetAllBudgetsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error al cargar presupuestos: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void HandleBudgetSelected(Guid budgetId)
+    {
+        Navigation.NavigateTo($"/budget-editor/{budgetId}");
+    }
+
+    private async Task HandleBudgetDeleted(Guid budgetId)
+    {
+        var budget = Budgets.FirstOrDefault(b => b.Id == budgetId);
+        if (budget == null) return;
+
+        // Confirmación antes de eliminar
+        var confirmed = await ConfirmDelete(budget.ClientName);
+        if (!confirmed) return;
+
+        try
+        {
+            var deleted = await BudgetService.DeleteBudgetAsync(budgetId);
+            if (deleted)
+            {
+                // Recargar la lista
+                await LoadBudgetsAsync();
+            }
+            else
+            {
+                ErrorMessage = "No se pudo eliminar el presupuesto.";
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error al eliminar presupuesto: {ex.Message}";
+        }
+    }
+
+    private async Task<bool> ConfirmDelete(string clientName)
+    {
+        // Usar JavaScript para confirmación (más simple que crear un componente modal)
+        return await JSRuntime.InvokeAsync<bool>("confirm", new object[] { $"¿Estás seguro de que deseas eliminar el presupuesto de {clientName}? Esta acción no se puede deshacer." });
+    }
+}
+

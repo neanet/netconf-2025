@@ -1,0 +1,30 @@
+# spec-kit-template-cursor-agent-ps-v0.0.85 (1) Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2025-11-26
+
+## Active Technologies
+
+- C# 13 (.NET 10) + Blazor WebAssembly, Blazored.LocalStorage, System.Text.Json (001-currency-conversion)
+
+## Project Structure
+
+```text
+backend/
+frontend/
+tests/
+```
+
+## Commands
+
+# Add commands for C# 13 (.NET 10)
+
+## Code Style
+
+C# 13 (.NET 10): Follow standard conventions
+
+## Recent Changes
+
+- 001-currency-conversion: Added C# 13 (.NET 10) + Blazor WebAssembly, Blazored.LocalStorage, System.Text.Json
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->

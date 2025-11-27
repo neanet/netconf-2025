@@ -1,0 +1,76 @@
+@namespace BudgetApp.Components
+@using System.ComponentModel.DataAnnotations
+
+<EditForm Model="@ClientModel" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Información del Cliente</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Nombre del Cliente *</label>
+                <InputText @bind-Value="ClientModel.Name" class="form-control" />
+                <ValidationMessage For="@(() => ClientModel.Name)" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Empresa</label>
+                <InputText @bind-Value="ClientModel.Company" class="form-control" />
+                <ValidationMessage For="@(() => ClientModel.Company)" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email *</label>
+                <InputText @bind-Value="ClientModel.Email" class="form-control" type="email" />
+                <ValidationMessage For="@(() => ClientModel.Email)" />
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public Client Client { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<Client> OnClientChanged { get; set; }
+
+    private ClientEditModel ClientModel { get; set; } = new();
+
+    protected override void OnParametersSet()
+    {
+        ClientModel = new ClientEditModel
+        {
+            Name = Client.Name,
+            Company = Client.Company ?? string.Empty,
+            Email = Client.Email
+        };
+    }
+
+    private async Task HandleSubmit()
+    {
+        var updatedClient = new Client
+        {
+            Name = ClientModel.Name,
+            Company = string.IsNullOrWhiteSpace(ClientModel.Company) ? null : ClientModel.Company,
+            Email = ClientModel.Email
+        };
+
+        await OnClientChanged.InvokeAsync(updatedClient);
+    }
+
+    private class ClientEditModel
+    {
+        [Required(ErrorMessage = "El nombre del cliente es requerido")]
+        [StringLength(200, MinimumLength = 1, ErrorMessage = "El nombre debe tener entre 1 y 200 caracteres")]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(200, ErrorMessage = "El nombre de la empresa no puede exceder 200 caracteres")]
+        public string Company { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El email del cliente es requerido")]
+        [EmailAddress(ErrorMessage = "El formato del email no es válido")]
+        public string Email { get; set; } = string.Empty;
+    }
+}
+

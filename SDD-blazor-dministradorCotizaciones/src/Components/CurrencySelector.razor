@@ -1,0 +1,26 @@
+@namespace BudgetApp.Components
+
+<div class="mb-3">
+    <label class="form-label">Moneda</label>
+    <select value="@SelectedCurrency" @onchange="OnCurrencyChanged" class="form-select">
+        <option value="@Currency.Pesos">Pesos (ARS)</option>
+        <option value="@Currency.Dollars">Dólares (USD)</option>
+    </select>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Currency SelectedCurrency { get; set; }
+
+    [Parameter]
+    public EventCallback<Currency> SelectedCurrencyChanged { get; set; }
+
+    private async Task OnCurrencyChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<Currency>(e.Value?.ToString(), out var currency))
+        {
+            await SelectedCurrencyChanged.InvokeAsync(currency);
+        }
+    }
+}
+

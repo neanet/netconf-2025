@@ -1,0 +1,32 @@
+@namespace BudgetApp.Components
+
+<div class="client-info">
+    <h3>Información del Cliente</h3>
+    @if (Client != null)
+    {
+        <div class="client-detail">
+            <strong>Nombre:</strong> @Client.Name
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Client.Company))
+        {
+            <div class="client-detail">
+                <strong>Empresa:</strong> @Client.Company
+            </div>
+        }
+        <div class="client-detail">
+            <strong>Email:</strong> @Client.Email
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <p>No hay información del cliente disponible</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Client? Client { get; set; }
+}
+

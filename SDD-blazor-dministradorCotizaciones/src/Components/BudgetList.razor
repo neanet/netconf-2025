@@ -1,0 +1,68 @@
+@namespace BudgetApp.Components
+@inject ICalculationService CalculationService
+@inject ICurrencyService CurrencyService
+
+@if (Budgets == null || !Budgets.Any())
+{
+    <div class="alert alert-info">
+        <p>No hay presupuestos guardados.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Moneda</th>
+                    <th>Fecha Creación</th>
+                    <th>Última Modificación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var budget in Budgets)
+                {
+                    <tr>
+                        <td>@(string.IsNullOrWhiteSpace(budget.ClientName) ? "Sin nombre" : budget.ClientName)</td>
+                        <td>@budget.ItemCount</td>
+                        <td>@FormatCurrency(budget.Total, budget.Currency)</td>
+                        <td><span class="badge bg-secondary">@(budget.Currency == Currency.Pesos ? "ARS" : "USD")</span></td>
+                        <td>@budget.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@budget.LastModifiedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-primary" @onclick="() => OnBudgetSelected.InvokeAsync(budget.Id)">
+                                    Cargar
+                                </button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => OnBudgetDeleted.InvokeAsync(budget.Id)">
+                                    Eliminar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<BudgetApp.Models.BudgetSummary> Budgets { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<Guid> OnBudgetSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> OnBudgetDeleted { get; set; }
+
+    private string FormatCurrency(decimal amount, Currency currency)
+    {
+        return CalculationService.FormatCurrency(amount, currency);
+    }
+}
+

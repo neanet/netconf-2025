@@ -1,0 +1,29 @@
+@namespace BudgetApp.Components
+@inject ICalculationService CalculationService
+@inject ICurrencyService CurrencyService
+
+<div class="total-section">
+    <table style="width: 100%;">
+        <tr>
+            <td class="total-label">Total:</td>
+            <td class="total-amount">@CalculationService.FormatCurrency(GetDisplayTotal(), Currency)</td>
+        </tr>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public decimal Total { get; set; }
+
+    [Parameter]
+    public Currency Currency { get; set; } = Currency.Pesos;
+
+    private decimal GetDisplayTotal()
+    {
+        if (Currency == Currency.Pesos)
+            return Total;
+        
+        return CurrencyService.ConvertToDollars(Total);
+    }
+}
+

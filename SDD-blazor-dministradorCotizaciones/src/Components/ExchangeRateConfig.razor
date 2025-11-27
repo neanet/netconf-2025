@@ -1,0 +1,62 @@
+@namespace BudgetApp.Components
+@inject ICurrencyService CurrencyService
+
+<EditForm Model="@Model" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label class="form-label">Tasa de Cambio (1 USD = X Pesos)</label>
+        <InputNumber @bind-Value="Model.PesosPerDollar" class="form-control" />
+        <ValidationMessage For="@(() => Model.PesosPerDollar)" />
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <div class="text-danger mt-1">@ErrorMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(SuccessMessage))
+        {
+            <div class="text-success mt-1">@SuccessMessage</div>
+        }
+    </div>
+    <button type="submit" class="btn btn-primary">Configurar Tasa</button>
+</EditForm>
+
+@code {
+    private class ExchangeRateFormModel
+    {
+        [System.ComponentModel.DataAnnotations.Range(0.001, 10000, ErrorMessage = "La tasa de cambio debe estar entre 0.001 y 10,000")]
+        public decimal PesosPerDollar { get; set; } = 400m; // Default: 1 USD = 400 Pesos
+    }
+
+    private ExchangeRateFormModel Model { get; set; } = new();
+    private string? ErrorMessage { get; set; }
+    private string? SuccessMessage { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var currentRate = CurrencyService.GetExchangeRate();
+        if (currentRate.HasValue)
+        {
+            Model.PesosPerDollar = currentRate.Value;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+
+        try
+        {
+            await CurrencyService.SetExchangeRateAsync(Model.PesosPerDollar);
+            SuccessMessage = $"Tasa de cambio configurada: 1 USD = {Model.PesosPerDollar} ARS";
+        }
+        catch (ArgumentException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error al configurar la tasa de cambio: {ex.Message}";
+        }
+    }
+}
+

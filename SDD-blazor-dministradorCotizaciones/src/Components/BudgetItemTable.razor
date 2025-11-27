@@ -1,0 +1,59 @@
+@namespace BudgetApp.Components
+@inject ICalculationService CalculationService
+@inject ICurrencyService CurrencyService
+
+@if (Items == null || !Items.Any())
+{
+    <div class="empty-state">
+        <p>No hay items en el presupuesto</p>
+    </div>
+}
+else
+{
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Descripción</th>
+                <th class="text-center">Cantidad</th>
+                <th class="text-right">Precio Unitario</th>
+                <th class="text-right">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Items)
+            {
+                <tr>
+                    <td>@item.Description</td>
+                    <td class="text-center">@item.Quantity.ToString("N2")</td>
+                    <td class="text-right">@CalculationService.FormatCurrency(GetDisplayUnitPrice(item), Currency)</td>
+                    <td class="text-right">@CalculationService.FormatCurrency(GetDisplaySubtotal(item), Currency)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<BudgetItem> Items { get; set; } = new();
+
+    [Parameter]
+    public Currency Currency { get; set; } = Currency.Pesos;
+
+    private decimal GetDisplayUnitPrice(BudgetItem item)
+    {
+        if (Currency == Currency.Pesos)
+            return item.UnitPrice;
+        
+        return CurrencyService.ConvertToDollars(item.UnitPrice);
+    }
+
+    private decimal GetDisplaySubtotal(BudgetItem item)
+    {
+        if (Currency == Currency.Pesos)
+            return item.Subtotal;
+        
+        return CurrencyService.ConvertToDollars(item.Subtotal);
+    }
+}
+
