@@ -15,7 +15,7 @@ Una oportunidad única para aprender, compartir experiencias y conectar con la c
  + 📅 Miércoles 26/Nov de 2025 | 17 a 20hs
  + 📍 Universidad de la Cuenca del Plata (Lavalle 50, Corrientes, Argentina)
  + 🎫 Evento gratuito con registro previo. .
-
+  
 
 
 ## Agenda (Slides/Demo)
@@ -23,7 +23,7 @@ Una oportunidad única para aprender, compartir experiencias y conectar con la c
 | Topic | Speaker | Demo | Slides | 
 | --- | --- |  --- |  --- |
 | **Blazor + Passkeys + Aspire: Desarrollo web en NET 10** | Ing. Jose A. Fernandez | demo | slides | 
-| **Extendiendo las capacidades de la IA con RAG en NET 10** | Ing. Marcos Polischuk [![LinkedIn](./images/icon-linkedin.png)](https://www.linkedin.com/in/marcos-fabian-polischuk/)&nbsp; [![GitHub](./images/icon-github.png)](https://github.com/fernandezja)| [Demo](https://github.com/MPolischuk/smartsupport) | [Slides](https://github.com/MPolischuk/smartsupport/tree/main/resources) |
+| **Extendiendo las capacidades de la IA con RAG en NET 10** | Ing. Marcos Polischuk [![LinkedIn](./images/icon-linkedin.png)](https://www.linkedin.com/in/marcos-fabian-polischuk/)&nbsp; [![GitHub](./images/icon-github.png)](https://github.com/MPolischuk)| [Demo](https://github.com/MPolischuk/smartsupport) | [Slides](https://github.com/MPolischuk/smartsupport/tree/main/resources) |
 | **TUnit y Microsoft.Testing.Platform: La nueva era del testing en NET 10** | Mariano Vivaldo | Demo | Slides | 
 | **Spec-Driven Development (SSD) aplicado a .NET** | Martin Jones | Demo | Slides | 
 | **De la especificación del Prompt a la Acción: Integrando sistemas con MCP** | Santiago Vallejos [![LinkedIn](./images/icon-linkedin.png)](www.linkedin.com/in/santiago-maximiliano-vallejos)&nbsp;, Ing. Augusto Portillo | [Demo](https://github.com/MPolischuk/smartsupport) | Slides | 
